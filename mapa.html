@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <style>
+    /* Estilo para el elemento div que contiene el mapa */
+    #map {
+      height: 400px;
+      /* Altura del mapa */
+      width: 100%;
+      /* Ancho del mapa */
+    }
+  </style>
+</head>
+<div class="container my-5 text-center">
+  <button class="btn btn-danger w-100" onclick="traer()"> Obtener datos</button>
+  <div class="mt-5" id="contenido">
+  </div>
+
+  <body onload="initMap()">
+    <!-- Elemento div que contiene el mapa -->
+    <div id="map">
+      <!-- Inclusión de la biblioteca de Google Maps -->
+      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC5RONDL1En-mGlIytsFFLmNsYf6tnQLSE"></script>
+      <script>
+        function initMap() {
+          // Creación del mapa y asignación al elemento div
+          var map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: 19.131408, lng: -99.113928 },  // Coordenadas del centro del mapa
+            zoom: 8  // Nivel de zoom inicial
+          });
+          // Llamada a la función traer() y paso de la variable map como argumento
+          traer(map);
+
+          // Ejecución de traer() cada minuto
+          setInterval(function () {
+            
+            traer(map);
+          }, 60000);
+        }
+
+        var contenido = document.querySelector('#contenido')
+        function traer(map) {
+          fetch('https://ws.fulltrack2.com/events/all/apiKey/2de1558ef0b75457df254383eecbf0400b1362b7/secretKey/6ef96e3ad7d2e6e3293426c6f11bbb8e3ac493aa')
+            .then(res => res.json())
+            .then(res => {
+              var marcadores = [];
+              var infoWindows = [];
+              for (let i = 0; i < res.data.length; i++) {
+                const element = res.data[i];
+                // Obtiene las coordenadas del elemento
+                var latitud = element.ras_eve_latitude;
+                var latitudNum = parseFloat(latitud);
+                var longitud = element.ras_eve_longitude;
+                var longituddNum = parseFloat(longitud);
+                var vehiculo = element.ras_vei_veiculo;
+                var cliente = element.ras_cli_desc;
+                // Obtiene la dirección del vehículo en grados
+                var direccion = element.direccion;
+                // Crea una ventana de información para el marcador actual
+                var infoWindow = new google.maps.InfoWindow({
+                  // Agrega el contenido que quieres mostrar en la ventana de información
+                  content: 'Longitud: ' + longituddNum + '<br>Latitud: ' + latitudNum + '<br>Vehículo:' + vehiculo + '<br>Cliente: ' + cliente
+                });
+                infoWindows.push(infoWindow);
+  
+                // Crea un marcador en las coordenadas (latitud, longitud)
+                var marker = new google.maps.Marker({
+                  position: { lat: latitudNum, lng: longituddNum },
+                  icon: {
+                    url: 'https://cdn-icons-png.flaticon.com/512/4529/4529118.png',
+                    scaledSize: new google.maps.Size(20, 20),
+                  },
+                  map: map  // Utiliza el objeto de mapa creado anteriormente
+                });
+                marcadores.push(marker);
+                // Agrega un evento al marcador para mostrar la ventana de información al hacer clic en el icono
+                function agregarEvento(marker, infoWindow) {
+                  marker.addListener('click', function () {
+                    infoWindow.open(map, marker);
+                  });
+                }
+                agregarEvento(marker, infoWindow);
+              }
+              let html = '';
+              for (let i = 0; i < res.data.length; i++) {
+                const element = res.data[i];
+                html += `
+        <tr>
+          <th scope="row">${element.ras_cli_id}</th>
+          <th scope="row">${element.ras_cli_desc}</th>
+          <th scope="row">${element.ras_vei_veiculo}</th>
+          <th scope="row">${element.ras_vei_placa}</th>
+          <th scope="row">${element.ras_ras_id_aparelho}</th>
+          <th scope="row">${element.ras_ras_data_ult_comunicacao}</th>
+          <th scope="row">${element.ras_eve_data_gps}</th>
+          <th scope="row">${element.ras_ras_sinal_gps}</th>
+          <th scope="row">${element.ras_eve_velocidade}</th>
+          <th scope="row">${element.ras_eve_ignicao}</th>
+          <th scope="row">${element.ras_eve_latitude}</th>
+          <th scope="row">${element.ras_eve_longitude}</th>  
+          <th scope="row">${element.ras_eve_direcao}</th>
+        </tr>
+      `;
+              }
+              contenido.innerHTML = `
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Id Cliente</th>
+              <th scope="col">Cliente- listado</th>
+              <th scope="col">Vehículo</th>
+              <th scope="col">Placa</th>
+              <th scope="col">IMEI del Equipo</th>
+              <th scope="col">Última Comunicación</th>
+              <th scope="col">Fecha GPS</th>
+              <th scope="col">GPS</th>
+              <th scope="col">Velocidad</th>
+              <th scope="col">Ignición</th>
+              <th scope="col">Latitud</th>
+              <th scope="col">Longitud</th>
+              <th scope="col">Dirección</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${html}
+          </tbody>
+        </table>
+      </div>
+    `;
+            });
+          setInterval(traer, 60000);
+          
+        };
+        
+      </script>
+    </div>
+  </body>
+
+</html>
